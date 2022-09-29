@@ -53,6 +53,21 @@ int my_strcmp(char* strg1, char *strg2){
   }
 }
 
+size_t my_strlen(const char *str) {
+  size_t length = (size_t) 0;
+  const char *curr = str;
+  while(*curr != '\0') {
+    length++;
+    curr++;
+  }
+  return length;
+}
+
+void display_error_message(const char *msg) {
+  size_t len = my_strlen(msg);
+  my_write(2, msg, len);
+}
+
 int main(int argc, char **argv){
   char buffer[BUFFER_LEN];
   ssize_t read_res; /*signed size*/
@@ -70,7 +85,7 @@ int main(int argc, char **argv){
   int temp=0;
   int highest=10;
   char *filename;
-  int fd;
+  int fd=0;
   int isfile=0;
   
   /* We keep on reading until the file hits the end-of-file condition */
@@ -106,7 +121,7 @@ int main(int argc, char **argv){
       isfile=1;
     }
     if(highest<0){
-      fprintf(stderr, "Could not take in negative input.\n");
+      display_error_message("Could not take in negative input.\n");
       return 1;
     }
   }
@@ -114,25 +129,25 @@ int main(int argc, char **argv){
   if(isfile==1){
     fd = open(filename, O_RDONLY);
     if(fd<0){
-      fprintf(stderr,"Error opening file \"%s\": %s\n", filename, strerror(errno));
+      display_error_message("Error opening file\n");
       return 1;
     }
   }
   
   while(1){
     /* Try to read into the buffer, up to sizeof(buffer) bytes */
-    read_res = read(0, buffer, sizeof(buffer));
+    read_res = read(fd, buffer, sizeof(buffer));
 
     /* Handle the return values of the read system call */
 
     /*If the returned value is zero, we are done, as this is end-of-file*/
-    if (read_res == ((ssize_t) 0) && isfile==0) break;
+    if (read_res == ((ssize_t) 0)) break;
 
     /* If the returned value is negative, we have an error and we die */
 
     if (read_res < ((ssize_t) 0)) {
       /* Display the appropriate error message and die */
-      fprintf(stderr, "Error reading: %s\n", strerror(errno));
+      display_error_message("Error reading file\n");
       /* Deallocate everything that has been allocated */
       for (i=(size_t) 0; i<lines_len; i++){
 	free(lines[i]);
@@ -145,10 +160,6 @@ int main(int argc, char **argv){
     /* We know that read_res is positive */
     read_bytes = (size_t) read_res;
 
-    if(isfile==1){
-      read_res = read(fd,buffer,sizeof(buffer));
-      read_bytes = (size_t) read_res;
-    }
     
     /* Here, we need to handle the input and put it into memory */
     for(i=(size_t) 0; i < read_bytes; i++){
@@ -163,7 +174,7 @@ int main(int argc, char **argv){
 	  /* First allocation */
 	  ptr = (char *) malloc(FIRST_LINE_ALLOC_SIZE * sizeof(char)); //Each char is 1 byte
 	  if (ptr == NULL) {
-	    fprintf(stderr, "Could not allocate any more memory.\n");
+	    display_error_message("Could not allocate any more memory.\n");
 	    /* Deallocate everything that has been allocated */
 	    for (i=(size_t) 0; i<lines_len; i++){
 	      free(lines[i]);
@@ -179,7 +190,7 @@ int main(int argc, char **argv){
 	  ptr = (char *) realloc(current_line, current_line_size * ((size_t) 2) * sizeof(char));
 	  /* TODO: check overflow of the multiplication */
 	  if (ptr == NULL){
-	    fprintf(stderr, "Could not allocate any more memory.\n");
+	    display_error_message("Could not allocate any more memory.\n");
 	    /* Deallocate everything that has been allocated */
 	    for (i=(size_t) 0; i<lines_len; i++){
 	      free(lines[i]);
@@ -208,7 +219,7 @@ int main(int argc, char **argv){
 	    /* First allocation */
 	    lptr = (char **) malloc(FIRST_ARRAY_SIZE * sizeof(char *));
 	    if(lptr == NULL){
-	      fprintf(stderr, "Could not allocate any more memory.\n");
+	      display_error_message("Could not allocate any more memory.\n");
 	      /* Deallocate everything that has been allocated */
 	      for (i=(size_t) 0; i<lines_len; i++){
 		free(lines[i]);
@@ -221,7 +232,7 @@ int main(int argc, char **argv){
 	    lines_size = FIRST_ARRAY_SIZE;
 	    llptr = (char *) malloc(FIRST_ARRAY_SIZE * sizeof(char));
 	    if(llptr == NULL){
-	      fprintf(stderr, "Could not allocate any more memory.\n");
+	      display_error_message("Could not allocate any more memory.\n");
 	      /* Deallocate everything that has been allocated */
 	      for (i=(size_t) 0; i<lines_len; i++){
 		free(lines[i]);
@@ -236,7 +247,7 @@ int main(int argc, char **argv){
 	    lptr = (char **) realloc(lines, lines_size * ((size_t) 2) * sizeof(char *));
 
 	    if(lptr == NULL){
-	      fprintf(stderr, "Could not allocate any more memory.\n");
+	      display_error_message("Could not allocate any more memory.\n");
 	      /* Deallocate everything that has been allocated */
 	      for (i=(size_t) 0; i<lines_len; i++){
 		free(lines[i]);
@@ -252,7 +263,7 @@ int main(int argc, char **argv){
 	    llptr = (char *) realloc(lines_lengths, lines_size * ((size_t) 2) * sizeof(char));
 
 	    if(llptr == NULL){
-	      fprintf(stderr, "Could not allocate any more memory.\n");
+	      display_error_message("Could not allocate any more memory.\n");
 	      /* Deallocate everything that has been allocated */
 	      for (i=(size_t) 0; i<lines_len; i++){
 		free(lines[i]);
@@ -273,7 +284,7 @@ int main(int argc, char **argv){
 	current_line_size = (size_t) 0;
       }
     }
-    if(isfile==1) break;
+    
   }
 
   /* In the case when the last line has no new line character at the
@@ -286,7 +297,7 @@ int main(int argc, char **argv){
 	/* First allocation */
 	lptr = (char **) malloc(FIRST_ARRAY_SIZE * sizeof(char *));
 	if(lptr == NULL){
-	  fprintf(stderr, "Could not allocate any more memory.\n");
+	  display_error_message("Could not allocate any more memory.\n");
 	  /* Deallocate everything that has been allocated */
 	  for (i=(size_t) 0; i<lines_len; i++){
 	    free(lines[i]);
@@ -299,7 +310,7 @@ int main(int argc, char **argv){
 	lines_size = FIRST_ARRAY_SIZE;
 	llptr = (char *) malloc(FIRST_ARRAY_SIZE * sizeof(char));
 	if(llptr == NULL){
-	  fprintf(stderr, "Could not allocate any more memory.\n");
+	  display_error_message("Could not allocate any more memory.\n");
 	  /* Deallocate everything that has been allocated */
 	  for (i=(size_t) 0; i<lines_len; i++){
 	    free(lines[i]);
@@ -314,7 +325,7 @@ int main(int argc, char **argv){
 	lptr = (char **) realloc(lines, lines_size * ((size_t) 2) * sizeof(char *));
 
 	if(lptr == NULL){
-	  fprintf(stderr, "Could not allocate any more memory.\n");
+	  display_error_message("Could not allocate any more memory.\n");
 	  /* Deallocate everything that has been allocated */
 	  for (i=(size_t) 0; i<lines_len; i++){
 	    free(lines[i]);
@@ -330,7 +341,7 @@ int main(int argc, char **argv){
 	llptr = (char *) realloc(lines_lengths, lines_size * ((size_t) 2) * sizeof(char));
 
 	if(llptr == NULL){
-	  fprintf(stderr, "Could not allocate any more memory.\n");
+	  display_error_message("Could not allocate any more memory.\n");
 	  /* Deallocate everything that has been allocated */
 	  for (i=(size_t) 0; i<lines_len; i++){
 	    free(lines[i]);
