@@ -3,9 +3,6 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-
-#include <sys/types.h>
-#include <sys/mman.h>
 #include <fcntl.h>
 
 #define BUFFER_LEN (4096)
@@ -20,6 +17,7 @@ int my_write(int fd, const char *buf, size_t bytes){
   size_t bytes_to_be_written;
   size_t bytes_already_written;
   ssize_t bytes_written_this_time;
+
   bytes_to_be_written = bytes;
   bytes_already_written = (size_t) 0;
   while (bytes_to_be_written > ((size_t) 0)) {
@@ -35,9 +33,9 @@ int my_write(int fd, const char *buf, size_t bytes){
 }
 
 int my_atoi(char* str){
-  int r = 0;
+  int r =0;
 
-  for(int i=0; str[i]!='\0'; i++){
+  for(int i=0; str[i]!='\0'; ++i){
     r = r*10+str[i] - '0';
   }
   return r;
@@ -49,16 +47,15 @@ int my_strcmp(char* strg1, char *strg2){
     strg2++;
   }
   if(*strg1==*strg2){
-    return 0;
+    return 0; // it is equal
   } else{
     return *strg1 - *strg2;
   }
 }
 
-
 int main(int argc, char **argv){
   char buffer[BUFFER_LEN];
-  ssize_t read_res; /* signed size */
+  ssize_t read_res; /*signed size*/
   size_t read_bytes; /* unsigned size */
   size_t i;
   char c;
@@ -70,10 +67,8 @@ int main(int argc, char **argv){
   char *llptr;
   size_t lines_len, lines_size;
   char *lines_lengths;
-
   int temp=0;
-  int highest =10;
-
+  int highest=10;
   char *filename;
   int fd;
   int isfile=0;
@@ -88,13 +83,15 @@ int main(int argc, char **argv){
   lines = NULL;
   lines_lengths = NULL;
 
+  
+  
   if(argc>1){
-    int nfound =0;
+    int nfound=0;
     for(int i=0;i<argc;i++){
       if(my_strcmp(argv[i],"-n")==0){
 	highest = my_atoi(argv[i+1]);
-	nfound=1;
-	
+	nfound = 1;
+
 	if(i==1){
 	  filename=argv[3];
 	  isfile=1;
@@ -109,27 +106,26 @@ int main(int argc, char **argv){
       isfile=1;
     }
     if(highest<0){
-      fprintf(stderr,"Can not input negative value\n");
+      fprintf(stderr, "Could not take in negative input.\n");
       return 1;
     }
   }
 
-  if(isfile==1){    
+  if(isfile==1){
     fd = open(filename, O_RDONLY);
     if(fd<0){
-      fprintf(stderr, "Error opening file \"%s\": %s\n", filename, strerror(errno));
+      fprintf(stderr,"Error opening file \"%s\": %s\n", filename, strerror(errno));
       return 1;
     }
-    
-    }
-   
+  }
+  
   while(1){
     /* Try to read into the buffer, up to sizeof(buffer) bytes */
-    read_res = read(0, buffer, sizeof(buffer)); // have to uncomment this
+    read_res = read(0, buffer, sizeof(buffer));
 
     /* Handle the return values of the read system call */
-    
-    /*If the returne dvalue is zero, we are done, as this is end-of-file*/
+
+    /*If the returned value is zero, we are done, as this is end-of-file*/
     if (read_res == ((ssize_t) 0) && isfile==0) break;
 
     /* If the returned value is negative, we have an error and we die */
@@ -143,7 +139,6 @@ int main(int argc, char **argv){
       }
       free(lines);
       free(lines_lengths);
-      close(fd);
       return 1; //Could also return any other number, its arbitrary
     }
 
@@ -151,10 +146,10 @@ int main(int argc, char **argv){
     read_bytes = (size_t) read_res;
 
     if(isfile==1){
-      read_res = read(fd,buffer, sizeof(buffer));
+      read_res = read(fd,buffer,sizeof(buffer));
       read_bytes = (size_t) read_res;
     }
-
+    
     /* Here, we need to handle the input and put it into memory */
     for(i=(size_t) 0; i < read_bytes; i++){
       /* Get current character */
@@ -175,7 +170,6 @@ int main(int argc, char **argv){
 	    }
 	    free(lines);
 	    free(lines_lengths);
-	    close(fd);
 	    return 1;
 	  }
 	  current_line = ptr;
@@ -192,7 +186,6 @@ int main(int argc, char **argv){
 	    }
 	    free(lines);
 	    free(lines_lengths);
-	    close(fd);
 	    return 1;
 	  }
 	  current_line = ptr;
@@ -222,7 +215,6 @@ int main(int argc, char **argv){
 	      }
 	      free(lines);
 	      free(lines_lengths);
-	      close(fd);
 	      return 1;
 	    }
 	    lines = lptr;
@@ -236,7 +228,6 @@ int main(int argc, char **argv){
 	      }
 	      free(lines);
 	      free(lines_lengths);
-	      close(fd);
 	      return 1;
 	    }
 	    lines_lengths = llptr;
@@ -252,7 +243,6 @@ int main(int argc, char **argv){
 	      }
 	      free(lines);
 	      free(lines_lengths);
-	      close(fd);
 	      return 1;
 	    }
 	    lines = lptr;
@@ -269,12 +259,12 @@ int main(int argc, char **argv){
 	      }
 	      free(lines);
 	      free(lines_lengths);
-	      close(fd);
 	      return 1;
 	    }
 	    lines_lengths = llptr;
 	  }
 	}
+	
 	lines[lines_len] = current_line;
 	lines_lengths[lines_len] = current_line_len;
 	lines_len++;
@@ -283,7 +273,6 @@ int main(int argc, char **argv){
 	current_line_size = (size_t) 0;
       }
     }
-
     if(isfile==1) break;
   }
 
@@ -304,7 +293,6 @@ int main(int argc, char **argv){
 	  }
 	  free(lines);
 	  free(lines_lengths);
-	  close(fd);
 	  return 1;
 	}
 	lines = lptr;
@@ -318,7 +306,6 @@ int main(int argc, char **argv){
 	  }
 	  free(lines);
 	  free(lines_lengths);
-	  close(fd);
 	  return 1;
 	}
 	lines_lengths = llptr;
@@ -334,7 +321,6 @@ int main(int argc, char **argv){
 	  }
 	  free(lines);
 	  free(lines_lengths);
-	  close(fd);
 	  return 1;
 	}
 	lines = lptr;
@@ -351,7 +337,6 @@ int main(int argc, char **argv){
 	  }
 	  free(lines);
 	  free(lines_lengths);
-	  close(fd);
 	  return 1;
 	}
 	lines_lengths = llptr;
@@ -368,15 +353,14 @@ int main(int argc, char **argv){
 
   /* Here, we have an array lines of "strings", i.e. array lines of 
      pointers to characters. There are lines_len valid entries */
-  
-  for (i=(size_t) 0; i<lines_len; i++){
-    if(temp<highest){
-      my_write(1, lines[i], lines_lengths[i]);
+    
+  for (i=lines_len; i>((size_t) 0); i--){
+    if(temp<highest){ // 10-> highest
+      my_write(1, lines[i-((size_t)1)], lines_lengths[i-((size_t) 1)]);
       temp++;
     }
     else break;
   }
-  
 
   /* Deallocate everything that has been allocated */
   for (i=(size_t) 0; i<lines_len; i++){
@@ -384,7 +368,6 @@ int main(int argc, char **argv){
   }
   free(lines);
   free(lines_lengths);
-  close(fd);
 
   /* Signal success */
   return 0;
