@@ -81,6 +81,7 @@ int main(int argc, char **argv){
   //void *ptr;
   
   int isfile=0;
+  int n_lines_printed;
   /* We keep on reading until the file hits the end-of-file condition */
   current_line_len = (size_t) 0;
   current_line_size = (size_t) 0;
@@ -116,16 +117,19 @@ int main(int argc, char **argv){
     }
   }
 
-  /*if(isfile==1){
-    fd = open(filename, 0_RDONLY);
+  if(isfile==1){
+    fd = open(filename, O_RDONLY);
     if(fd<0){
       fprintf(stderr, "Error opening file \"%s\": %s\n", filename, strerror(errno));
       return 1;
     }
 
-    lseek_res = lseek(fd, (off_t) 0, SEEK_END);
-    }*/
-  
+    /*while (n_lines_printed < highest){
+      read_res = read()
+      }*/
+    
+    }
+   
   while(1){
     /* Try to read into the buffer, up to sizeof(buffer) bytes */
     read_res = read(0, buffer, sizeof(buffer));
@@ -153,8 +157,8 @@ int main(int argc, char **argv){
     read_bytes = (size_t) read_res;
 
     if(isfile==1){
-      fd = open(filename, O_RDONLY);
-      read_bytes = fd;
+      read_res = read(fd,buffer, sizeof(buffer));
+      read_bytes = (size_t) read_res;
     }
 
     /* Here, we need to handle the input and put it into memory */
