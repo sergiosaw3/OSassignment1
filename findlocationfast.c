@@ -86,7 +86,7 @@ int compare_entries(const char *word_a, const char *word_b) {
   return 0;
 }
   
-char *lookup_doit(entry_t dictionary[], ssize_t num_entries, const char *word) {
+char *lookup_doit(entry_t entry_list[], ssize_t num_entries, const char *word) {
   ssize_t l, r, m;
   int cmp;
   
@@ -94,8 +94,8 @@ char *lookup_doit(entry_t dictionary[], ssize_t num_entries, const char *word) {
   r = num_entries - ((ssize_t) 1);
   while (l <= r) {
     m = (l + r) / ((ssize_t) 2);
-    cmp = compare_entries(dictionary[m].number, word);
-    if (cmp == 0) return dictionary[m].location;
+    cmp = compare_entries(entry_list[m].number, word);
+    if (cmp == 0) return entry_list[m].location;
     if (cmp < 0) {
       l = m + ((ssize_t) 1);
     } else {
