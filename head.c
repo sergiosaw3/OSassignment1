@@ -76,12 +76,8 @@ int main(int argc, char **argv){
 
   char *filename;
   int fd;
-  off_t lseek_res;
-  size_t filesize;
-  //void *ptr;
-  
   int isfile=0;
-  int n_lines_printed;
+  
   /* We keep on reading until the file hits the end-of-file condition */
   current_line_len = (size_t) 0;
   current_line_size = (size_t) 0;
@@ -98,12 +94,13 @@ int main(int argc, char **argv){
       if(my_strcmp(argv[i],"-n")==0){
 	highest = my_atoi(argv[i+1]);
 	nfound=1;
-	if(argc>3){
-	  if(i+2>=argc){
-	    filename = argv[i-1];
-	  }else{
-	    filename = argv[i+2];
-	  }
+	
+	if(i==1){
+	  filename=argv[3];
+	  isfile=1;
+	}else{
+	  filename=argv[1];
+	  isfile=1;
 	}
       }
     }
@@ -117,16 +114,12 @@ int main(int argc, char **argv){
     }
   }
 
-  if(isfile==1){
+  if(isfile==1){    
     fd = open(filename, O_RDONLY);
     if(fd<0){
       fprintf(stderr, "Error opening file \"%s\": %s\n", filename, strerror(errno));
       return 1;
     }
-
-    /*while (n_lines_printed < highest){
-      read_res = read()
-      }*/
     
     }
    
