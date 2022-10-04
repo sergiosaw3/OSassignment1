@@ -7,7 +7,7 @@
 #include <string.h>
 #include <sys/wait.h>
 
-int childOne(int ear, int mouth, char *call,char *argv[], int fd){
+int childOne(int ear, int mouth,char *argv[], int fd){
   if(close(mouth)<0){
     fprintf(stderr,"close() did not work:%s\n",strerror(errno));
     if(close(ear)<0){
@@ -29,7 +29,7 @@ int childOne(int ear, int mouth, char *call,char *argv[], int fd){
     return 2;
   }
 
-  if(execvp(call,argv)<0){ // argv[0]
+  if(execvp(argv[0],argv)<0){
     fprintf(stderr,"execvp() did not work:%s\n",strerror(errno));
     return 2;
   }
@@ -92,7 +92,7 @@ int main(int argc, char **argv){
     return 1;
   }
   if(pidChildOne==((pid_t) 0)){
-    return childOne(ear,mouth, argv[2],argv2, fd);
+    return childOne(ear,mouth,argv2, fd);
   }
 
   if(close(mouth)<0){
