@@ -156,16 +156,16 @@ static int __try_size_t_multiply(size_t *c, size_t a, size_t b) {
    list probably needs to be kept ordered by ascending addresses.
 
 */
-struct __memory_block_struct{
+struct __memory_block_struct_t{
   size_t size;
   void *mmap_start;
   size_t mmap_size;
-  struct memopry_block_struct_t *next;
+  struct memory_block_struct_t *next;
 }typedef struct __memory_block_struct_t memory_block_t;
 
 #define __MEMORY_MAP_MIN_SIZE ((size_t) (16777216));
 
-static memory_block_t *__free_memory_blocks = NULL;
+static memory_block_t *free_memory_blocks = NULL;
 
 
 static void __coalesce_memory_blocks(memory_block_t *ptr, int prune){
