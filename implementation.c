@@ -160,104 +160,14 @@ struct __memory_block_struct_t{
   size_t size;
   void *mmap_start;
   size_t mmap_size;
-  struct memory_block_struct_t *next;
-}typedef struct __memory_block_struct_t memory_block_t;
+  struct __memory_block_struct_t *next;
+};typedef struct __memory_block_struct_t memory_block_t;
 
-#define __MEMORY_MAP_MIN_SIZE ((size_t) (16777216));
+#define __MEMORY_MAP_MIN_SIZE ((size_t) (16777216))
 
 static memory_block_t *free_memory_blocks = NULL;
 
-
-static void __coalesce_memory_blocks(memory_block_t *ptr, int prune){
-  memory_block_t *clobbered;
-  int did_coalesce;
-  if(ptr==NULL || (ptr->next==NULL)){
-    if(prune){
-      __prune_memory_maps();
-    }
-    return;
-  }
-  did_coalesce = 0;
-
-  if((ptr->mmap_start==ptr->next->mmap_start) &&
-     ((((void *) ptr) + ptr->size)==((void *)(ptr->next)))){
-    clobbered=ptr->next;
-    ptr->next=clobbered->size;
-    did_coalesce=1;
-  }
-  if(ptr->next==NULL){
-    if(did_coalesce && prune){
-      __prune_memory_maps();
-    }
-    return;
-  }
-  if(ptr->next->next==NULL){
-    if(did_coalesce && prune){
-      __prune_memory_maps();
-    }
-    return;
-  }
-  if((ptr->next->mmap_start==ptr->next->next->mmap_start) &&
-     ((((void *) ptr) +ptr->size) == ((void *) (ptr->next)))){
-    clobbered = ptr->next->next;
-    ptr->next->next = clobbered->next;
-    ptr->next->size += clobbered->size;
-    did_coalesce = 1;
-  }
-  if(did_coalesce && prune){
-    __prune_mem_maps();
-  }
-  return;
-}
-
-static void prune_memory_maps() {
-  memory_block_t *curr, *prev, *next;
-  for (curr = free_memory_blocks, prev = NULL;
-       curr!=NULL; curr = (prev = curr) ->next){
-    if ((curr->size == curr->mmap_size) &&
-	(curr->mmap_start == ((void *) curr))) {
-      next = curr->next;
-      if (munmap (curr->mmap_start, curr->mmap_size) == 0) {
-	if (prev == NULL)
-	  free_memory_blocks = next;
-	else
-	  prev->next = next;
-      }
-    }
-  }
-}
-
-static void __new_memory_map(size_t rawsize){
-  size_t size, minnmemb, nmemb;
-  void *ptr;
-  memory_block_t *new;
-
-  if(rawsize == ((size_t) 0))  return;
-
-  size = rawsize - ((size_t) 1);
-  nmemb = size + sizeof(memory_block_t);
-  if(nmemb < size) return;
-
-  nmemb /= sizeof(memory_block_t);
-  minnmemb = MEMORY_MAP_MIN_SIZE /sizeof(memory_block_t);
-  if(nmemb < minnmemb) nmemb = minnmemb;
-  if(!__try_size_t_multiply(&size, nmemb, sizeof(mem_blk_t))) return;
-
-  ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-
-  if(ptr == MAP_FAILED) return;
-
-  new = (memory_block_t*) ptr;
-  new->size = size;
-  new->mmap_start = ptr;
-  new->mmap_size = size;
-  new->next = NULL;
-
-  __add_free_memory_block(new, 0);
-}
-
-
-static void __get_memory_map(size_t rawsize){
+/*static void __get_memory_map(size_t rawsize){
   size_t size, nmemb;
   memory_block_t *curr,*new, *prev;
 
@@ -283,18 +193,127 @@ static void __get_memory_map(size_t rawsize){
 	new->size = curr->size - size;
 	new->mmap_start = curr->mmap_start;
 	new->mmap_size = curr->mmap_size;
-	new_next = curr->next;
+	new->next = curr->next;
 
 	if(prev==NULL) free_memory_blocks = new;
 	else prev->next = new;
 
 	curr->size = size;
-	return curr;
+	return NULL;
       }
     }
   }
   return NULL;
+  }*/
+
+static void __prune_memory_maps() {
+  memory_block_t *curr, *prev, *next;
+  for (curr = free_memory_blocks, prev = NULL;
+       curr!=NULL; curr = (prev = curr) ->next){
+    if ((curr->size == curr->mmap_size) &&
+	(curr->mmap_start == ((void *) curr))) {
+      next = curr->next;
+      if (munmap (curr->mmap_start, curr->mmap_size) == 0) {
+	if (prev == NULL)
+	  free_memory_blocks = next;
+	else
+	  prev->next = next;
+      }
+    }
+  }
 }
+
+static void __coalesce_memory_blocks(memory_block_t *ptr, int prune){
+  memory_block_t *clobbered;
+  int did_coalesce;
+  if(ptr==NULL || (ptr->next==NULL)){
+    if(prune){
+      __prune_memory_maps();
+    }
+    return;
+  }
+  did_coalesce = 0;
+
+  if((ptr->mmap_start==ptr->next->mmap_start) &&
+     ((((void *) ptr) + ptr->size)==((void *)(ptr->next)))){
+    clobbered=ptr->next;
+    ptr->next = clobbered->next;
+    ptr->size = clobbered->size;
+    did_coalesce=1;
+  }
+  if(ptr->next==NULL){
+    if(did_coalesce && prune){
+      __prune_memory_maps();
+    }
+    return;
+  }
+  if(ptr->next->next==NULL){
+    if(did_coalesce && prune){
+      __prune_memory_maps();
+    }
+    return;
+  }
+  if((ptr->next->mmap_start==ptr->next->next->mmap_start) &&
+     ((((void *) ptr) +ptr->size) == ((void *) (ptr->next)))){
+    clobbered = ptr->next->next;
+    ptr->next->next = clobbered->next;
+    ptr->next->size += clobbered->size;
+    did_coalesce = 1;
+  }
+  if(did_coalesce && prune){
+    __prune_memory_maps();
+  }
+  return;
+}
+
+static void __add_free_memory_block(memory_block_t *ptr, int prune){
+  memory_block_t *curr, *prev;
+  if(ptr==NULL) return;
+  for(curr=free_memory_blocks, prev=NULL; curr!=NULL; curr=(prev=curr)->next){
+    if(((void *)ptr)<((void *) curr)){
+      break;
+    }
+  }
+  if(prev==NULL){
+    ptr->next = free_memory_blocks;
+    __coalesce_memory_blocks(ptr,prune);
+  } else{
+    ptr->next = curr;
+    prev->next = ptr;
+    __coalesce_memory_blocks(prev,prune);
+  }
+}
+
+static void __new_memory_map(size_t rawsize){
+  size_t size, minnmemb, nmemb;
+  void *ptr;
+  memory_block_t *new;
+
+  if(rawsize == ((size_t) 0))  return;
+
+  size = rawsize - ((size_t) 1);
+  nmemb = size + sizeof(memory_block_t);
+  if(nmemb < size) return;
+
+  nmemb /= sizeof(memory_block_t);
+  minnmemb = __MEMORY_MAP_MIN_SIZE / sizeof(memory_block_t);
+  if(nmemb < minnmemb) nmemb = minnmemb;
+  if(!__try_size_t_multiply(&size, nmemb, sizeof(memory_block_t))) return;
+
+  ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+
+  if(ptr == MAP_FAILED) return;
+
+  new = (memory_block_t*) ptr;
+  new->size = size;
+  new->mmap_start = ptr;
+  new->mmap_size = size;
+  new->next = NULL;
+
+  __add_free_memory_block(new, 0);
+}
+
+
 
 static memory_block_t * __get_memory_block(size_t rawsize) {
   size_t nmemb, size;
@@ -309,13 +328,13 @@ static memory_block_t * __get_memory_block(size_t rawsize) {
   nmemb /= sizeof(memory_block_t);
   if (!__try_size_t_multiply(&size, nmemb, sizeof(memory_block_t))) return NULL;
 
-  for(curr = _free_memory_blocks, prev = NULL;
+  for(curr = free_memory_blocks, prev = NULL;
       curr != NULL;
-      curr = (prev = curr)->next) {
+      curr = (memory_block_t *)(prev = curr)->next) {
     if (curr->size >= size) {
       if ((curr->size - size) < sizeof(memory_block_t)) {
 	if (prev == NULL) {
-	  _free_memory_blocks = curr->next;
+	  free_memory_blocks = curr->next;
 	}else{
 	  prev->next = curr->next;
 	}
@@ -327,7 +346,7 @@ static memory_block_t * __get_memory_block(size_t rawsize) {
 	new->mmap_size = curr->mmap_size;
 	new->next = curr->next;
 	if (prev == NULL) {
-	  _free_memory_blocks = new;
+	  free_memory_blocks = new;
 	}else{
 	  prev->next = new;
 	}
@@ -349,13 +368,13 @@ void __free_impl(void *);
 void *__malloc_impl(size_t size) {
   size_t s;
   void *ptr;
-  if(size=(size_t) 0) return NULL;
-  s+size+sizeof(memory_block_t); // what is this for
+  if(size==(size_t) 0) return NULL;
+  s=size+sizeof(memory_block_t); 
   if(s<size) return NULL;
   __new_memory_map(s);
   ptr=(void *) __get_memory_block(s);
-  if(ptr==NULL){
-    return sizeof(memory_block_t);
+  if(ptr!=NULL){
+    return ptr+sizeof(memory_block_t);
   }
   return NULL;
 }
@@ -363,7 +382,7 @@ void *__malloc_impl(size_t size) {
 void *__calloc_impl(size_t nmemb, size_t size) {
   size_t s;
   void *ptr;
-  if(!__try_size_t_multipley(&s,nmemb,size)) return NULL;
+  if(!__try_size_t_multiply(&s,nmemb,size)) return NULL;
   ptr = __malloc_impl(s);
   if(ptr==NULL){
     __memset(ptr,0,s);
@@ -378,18 +397,23 @@ void *__realloc_impl(void *ptr, size_t size) {
   if(ptr==NULL){
     __malloc_impl(size);
   }
-  if(size==(size_t 0)){
+  if(size==(size_t) 0){
     __free_impl(ptr);
     return NULL;
   }
   new_ptr=__malloc_impl(size);
   if(new_ptr==NULL) return NULL;
-  old_mem_block = (memory_block_t *)(ptr-sizeof(memory));
-				      }
+  old_mem_block = (memory_block_t *) (ptr-sizeof(memory_block_t));
+  s = old_mem_block->size;
+  if(size<s) s = size;
+  __memcpy(new_ptr, ptr,s);
+  __free_impl(ptr);
+  return new_ptr;
+}
 
 void __free_impl(void *ptr) {
   if(ptr==NULL) return;
-  add_free_memory_block(ptr-sizeof(memory_block_t),1);
+  __add_free_memory_block(ptr-sizeof(memory_block_t),1);
 }
 
 /* End of the actual malloc/calloc/realloc/free functions */
