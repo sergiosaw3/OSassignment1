@@ -10,9 +10,9 @@
 
     All rights reserved.
 
-    Contributors:  ...
-                   ...
-		   ...                 and
+    Contributors:  Sergio Velasco
+                   Dimitri Lyon
+		   Elton Villa                 and
 		   Christoph Lauter
 
     See file memory.c on how to compile this code.
