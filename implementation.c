@@ -156,6 +156,45 @@ static int __try_size_t_multiply(size_t *c, size_t a, size_t b) {
    list probably needs to be kept ordered by ascending addresses.
 
 */
+struct __memory_block_struct{
+  size_t size;
+  void *mmap_start;
+  size_t mmap_size;
+  struct memepry_block_struct_t *next;
+}typedef struct __mempry_block_struct_t memory_block_t;
+
+#define __MEMORY_MAP_MIN_SIZE ((size_t) (16777216));
+
+static void __coalesce_memory_blocks(memory_block_t *ptr, int prune){
+  memory_block_t *clobbered;
+  int did_coalesce;
+  if(ptr==NULL || (ptr->next==NULL)){
+    if(prune){
+      __prune_memory_maps();
+      return;
+    }
+  }
+  did_coalesce = 0;
+
+  if((ptr->mmap_start==ptr->next->mmap_start) &&
+     ((((void *) ptr) + ptr->size)==((void *)(ptr->next)))){
+    clobbered=ptr->next;
+    ptr->next=clobbered->size;
+    did_coalesce=1;
+  }
+  if(ptr->next==NULL){
+    if(did_coalesce && prune){
+      __prune_memory_maps();
+      return;
+    }
+  }
+  if(ptr->next->next==NULL){
+    if(did_coalesce && prune){
+      __prune_memory_maps();
+      return;
+    }
+  }
+}
 
 
 /* End of your helper functions */
@@ -165,22 +204,49 @@ static int __try_size_t_multiply(size_t *c, size_t a, size_t b) {
 void __free_impl(void *);
 
 void *__malloc_impl(size_t size) {
-  /* STUB */
+  size_t s;
+  void *ptr;
+  if(size=(size_t) 0) return NULL;
+  s+size+sizeof(memory_block_t); // what is this for
+  if(s<size) return NULL;
+  __new_memory_map(s);
+  ptr=(void *) __get_memory_block(s);
+  if(ptr==NULL){
+    return sizeof(memory_block_t);
+  }
   return NULL;
 }
 
 void *__calloc_impl(size_t nmemb, size_t size) {
-  /* STUB */
-  return NULL;  
+  size_t s;
+  void *ptr;
+  if(!__try_size_t_multipley(&s,nmemb,size)) return NULL;
+  ptr = __malloc_impl(s);
+  if(ptr==NULL){
+    __memset(ptr,0,s);
+  }
+  return ptr;  
 }
 
 void *__realloc_impl(void *ptr, size_t size) {
-  /* STUB */
-  return NULL;  
-}
+  void *new_ptr;
+  memory_block_t *old_mem_block;
+  size_t s;
+  if(ptr==NULL){
+    __malloc_impl(size);
+  }
+  if(size==(size_t 0)){
+    __free_impl(ptr);
+    return NULL;
+  }
+  new_ptr=__malloc_impl(size);
+  if(new_ptr==NULL) return NULL;
+  old_mem_block = (memory_block_t *)(ptr-sizeof(memory));
+				      }
 
 void __free_impl(void *ptr) {
-  /* STUB */
+  if(ptr==NULL) return;
+  add_free_memory_block(ptr-sizeof(memory_block_t),1);
 }
 
 /* End of the actual malloc/calloc/realloc/free functions */
