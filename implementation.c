@@ -209,10 +209,11 @@ static memory_block_t *free_memory_blocks = NULL;
 static void __prune_memory_maps() {
   memory_block_t *curr, *prev, *next;
   for (curr = free_memory_blocks, prev = NULL;
-       curr!=NULL; curr = (prev = curr) ->next){
+       curr!=NULL; curr = next){
+    next = curr->next;
     if ((curr->size == curr->mmap_size) &&
 	(curr->mmap_start == ((void *) curr))) {
-      next = curr->next;
+      
       if (munmap (curr->mmap_start, curr->mmap_size) == 0) {
 	if (prev == NULL)
 	  free_memory_blocks = next;
@@ -220,6 +221,7 @@ static void __prune_memory_maps() {
 	  prev->next = next;
       }
     }
+    prev = curr;
   }
 }
 
