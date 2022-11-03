@@ -167,45 +167,6 @@ struct __memory_block_struct_t{
 
 static memory_block_t *free_memory_blocks = NULL;
 
-/*static void __get_memory_map(size_t rawsize){
-  size_t size, nmemb;
-  memory_block_t *curr,*new, *prev;
-
-  if (rawsize == ((size_t) 0)) return NULL;
-
-  size = rawsize - ((size_t) 1);
-  nmemb = size + sizeof(mem_block_t);
-  if(nmemb <size) return NULL;
-
-  nmemb /= sizeof(memory_block_t); 
-  if(!__try_size_t_multiply(&size, nmemb, sizeof(memory_block_t))) return NULL;
-
-  for(curr = free_memory_blocks, prev = NULL;
-      curr!= NULL;
-      curr = (prev = curr)->next){
-    if(curr->size >=size){
-      if((curr->size -size) < sizeof(memory_block_t)){
-	if(prev==NULL) free_mem_blocks = curr->next;
-	else prev->next = curr->next;
-	return curr;
-      } else{
-	new = (memory_block_t *) (((void *) curr)+size);
-	new->size = curr->size - size;
-	new->mmap_start = curr->mmap_start;
-	new->mmap_size = curr->mmap_size;
-	new->next = curr->next;
-
-	if(prev==NULL) free_memory_blocks = new;
-	else prev->next = new;
-
-	curr->size = size;
-	return NULL;
-      }
-    }
-  }
-  return NULL;
-  }*/
-
 static void __prune_memory_maps() {
   memory_block_t *curr, *prev, *next;
   for (curr = free_memory_blocks, prev = NULL;
