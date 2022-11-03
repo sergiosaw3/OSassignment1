@@ -276,6 +276,7 @@ static void __add_free_memory_block(memory_block_t *ptr, int prune){
   }
   if(prev==NULL){
     ptr->next = free_memory_blocks;
+    free_memory_blocks = ptr;
     __coalesce_memory_blocks(ptr,prune);
   } else{
     ptr->next = curr;
@@ -371,6 +372,10 @@ void *__malloc_impl(size_t size) {
   if(size==(size_t) 0) return NULL;
   s=size+sizeof(memory_block_t); 
   if(s<size) return NULL;
+  ptr=(void *) __get_memory_block(s);
+  if(ptr!=NULL){
+    return ptr+sizeof(memory_block_t);
+  }
   __new_memory_map(s);
   ptr=(void *) __get_memory_block(s);
   if(ptr!=NULL){
